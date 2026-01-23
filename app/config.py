@@ -5,16 +5,15 @@ load_dotenv()
 
 # API Configuration
 API_VERSION = "v1"
-API_TITLE = "Perchance Character Generator API"
-API_DESCRIPTION = "API wrapper for Perchance.org AI character generation"
+API_TITLE = "Artigen API"
+API_DESCRIPTION = "Free AI Image Generator API using Pollinations.ai"
 
 # CORS Configuration
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
 
-# Rate Limiting (for future implementation)
-RATE_LIMIT_REQUESTS = int(os.getenv("RATE_LIMIT_REQUESTS", "10"))
-RATE_LIMIT_PERIOD = int(os.getenv("RATE_LIMIT_PERIOD", "60"))
-
 # Default generation settings
-DEFAULT_RESOLUTION = "512x768"
-DEFAULT_STYLE = "anime"
+DEFAULT_RESOLUTION = "1024x1024"
+DEFAULT_STYLE = "realistic"
+
+# Pollinations.ai API Token (optional, for premium features like img2img with kontext)
+POLLINATIONS_TOKEN = os.getenv("POLLINATIONS_TOKEN", "")

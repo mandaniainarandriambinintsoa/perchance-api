@@ -66,3 +66,6 @@ venv.bak/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local MCP config
+.mcp.json
