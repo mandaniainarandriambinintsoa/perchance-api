@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
@@ -7,11 +8,25 @@ from app.config import (
     ALLOWED_ORIGINS
 )
 from app.routes import generate_router, styles_router
+from app.services.queue_service import queue_service
 import logging
 import httpx
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Startup and shutdown events"""
+    # Startup: Start queue workers
+    logger.info("Starting queue workers...")
+    await queue_service.start_workers()
+    logger.info("Queue workers started (max concurrent: 3)")
+    yield
+    # Shutdown: cleanup if needed
+    logger.info("Shutting down...")
+
 
 # Create FastAPI app
 app = FastAPI(
@@ -19,7 +34,8 @@ app = FastAPI(
     description=API_DESCRIPTION,
     version=API_VERSION,
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
+    lifespan=lifespan
 )
 
 # CORS Configuration - Use configured origins, not wildcard in production

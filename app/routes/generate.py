@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from app.schemas import GenerateRequest, GenerateResponse, ImageToImageRequest
 from app.services import PerchanceService
+from app.services.queue_service import queue_service, JobStatus
 import logging
 
 logger = logging.getLogger(__name__)
@@ -103,3 +104,88 @@ async def image_to_image(body: ImageToImageRequest) -> GenerateResponse:
         seed=seed,
         model="kontext"
     )
+
+
+# ============== QUEUE ENDPOINTS ==============
+
+@router.post("/queue", tags=["Queue"])
+async def queue_generate_image(body: GenerateRequest):
+    """
+    Add image generation to queue (non-blocking).
+    Returns a job_id to check status later.
+
+    Use this for high-traffic scenarios to prevent server overload.
+    """
+    # Validate style
+    available_styles = PerchanceService.get_styles()
+    if body.style and body.style not in available_styles:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid style. Available styles: {', '.join(available_styles)}"
+        )
+
+    # Validate model
+    available_models = PerchanceService.get_models()
+    model = body.model or "sana"
+    if model not in available_models:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid model. Available models: {', '.join(available_models.keys())}"
+        )
+
+    # Add to queue
+    job = await queue_service.add_job({
+        "job_type": "generate",
+        "prompt": body.prompt,
+        "style": body.style or "realistic",
+        "resolution": body.resolution or "512x768",
+        "negative_prompt": body.negative_prompt,
+        "model": model,
+        "enhance": body.enhance if body.enhance is not None else True
+    })
+
+    return {
+        "job_id": job.id,
+        "status": job.status.value,
+        "position": job.position,
+        "message": f"Job queued. Position: {job.position}"
+    }
+
+
+@router.get("/queue/{job_id}", tags=["Queue"])
+async def get_job_status(job_id: str):
+    """
+    Check the status of a queued job.
+
+    - **pending**: Job is waiting in queue
+    - **processing**: Job is being processed
+    - **completed**: Job finished, result available
+    - **failed**: Job failed, error available
+    """
+    job = queue_service.get_job(job_id)
+
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    response = {
+        "job_id": job.id,
+        "status": job.status.value,
+        "position": job.position if job.status == JobStatus.PENDING else 0
+    }
+
+    if job.status == JobStatus.COMPLETED and job.result:
+        response["result"] = job.result
+    elif job.status == JobStatus.FAILED:
+        response["error"] = job.error
+
+    return response
+
+
+@router.get("/queue", tags=["Queue"])
+async def get_queue_status():
+    """
+    Get current queue status.
+
+    Returns number of pending/processing jobs and available slots.
+    """
+    return queue_service.get_queue_status()
