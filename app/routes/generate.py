@@ -31,7 +31,7 @@ async def generate_image(body: GenerateRequest) -> GenerateResponse:
 
     # Validate model
     available_models = PerchanceService.get_models()
-    model = body.model or "sana"
+    model = body.model or "flux"
     if model not in available_models:
         raise HTTPException(
             status_code=400,
@@ -126,7 +126,7 @@ async def queue_generate_image(body: GenerateRequest):
 
     # Validate model
     available_models = PerchanceService.get_models()
-    model = body.model or "sana"
+    model = body.model or "flux"
     if model not in available_models:
         raise HTTPException(
             status_code=400,

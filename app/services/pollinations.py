@@ -8,9 +8,8 @@ from app.config import POLLINATIONS_TOKEN
 class PerchanceService:
     """Service wrapper for AI image generation using Pollinations.ai"""
 
-    BASE_URL = "https://image.pollinations.ai/prompt"
-    # New API endpoint for premium models (kontext, gptimage)
-    GEN_URL = "https://gen.pollinations.ai/image"
+    # Unified API endpoint (requires API key since Feb 2026)
+    BASE_URL = "https://gen.pollinations.ai/image"
 
     AVAILABLE_STYLES = [
         "realistic",
@@ -23,11 +22,14 @@ class PerchanceService:
         "3d-render"
     ]
 
-    # Modèles Pollinations disponibles (mis à jour janvier 2026)
+    # Modèles Pollinations disponibles (mis à jour février 2026)
     AVAILABLE_MODELS = {
-        "sana": "High quality realistic images (recommended)",
-        "zimage": "Alternative image model",
-        "turbo": "Fast generation"
+        "flux": "Flux Schnell - Fast high-quality generation (recommended)",
+        "zimage": "Z-Image Turbo - Fast 6B Flux with 2x upscaling",
+        # Premium models (require higher tier / more pollen credits):
+        # "seedream": "Seedream 4.0 - ByteDance ARK (better quality)",
+        # "gptimage": "GPT Image 1 Mini - OpenAI image generation",
+        # "imagen-4": "Imagen 4 - Google's latest image gen",
     }
 
     # Prompts de style optimisés pour le réalisme maximum
@@ -71,7 +73,7 @@ class PerchanceService:
         style: str = "realistic",
         resolution: str = "512x768",
         negative_prompt: Optional[str] = None,
-        model: str = "sana",
+        model: str = "flux",
         safe: bool = False,
         enhance: bool = True
     ) -> Tuple[bool, Optional[str], Optional[int], Optional[str]]:
@@ -83,7 +85,7 @@ class PerchanceService:
             style: Art style to apply (realistic, photorealistic, cinematic, etc.)
             resolution: Image resolution (e.g., "512x768")
             negative_prompt: Things to avoid in the image
-            model: Pollinations model (flux-realism, flux, turbo, kontext)
+            model: Pollinations model (flux, seedream, zimage, gptimage, imagen-4)
             safe: Enable NSFW filter (default: False)
             enhance: Enable AI prompt enhancement (default: True)
 
@@ -108,8 +110,8 @@ class PerchanceService:
             # Generate seed for reproducibility
             seed = random.randint(1, 2147483647)
 
-            # Build Pollinations URL
             encoded_prompt = quote(full_prompt)
+
             url = (
                 f"{cls.BASE_URL}/{encoded_prompt}"
                 f"?width={width}"
@@ -124,17 +126,28 @@ class PerchanceService:
             if enhance:
                 url += "&enhance=true"
 
-            # Fetch image from Pollinations
-            async with httpx.AsyncClient(timeout=120.0) as client:
-                response = await client.get(url)
+            if POLLINATIONS_TOKEN:
+                url += f"&key={POLLINATIONS_TOKEN}"
+            else:
+                return False, None, None, "POLLINATIONS_TOKEN is not configured. Get a free API key at https://enter.pollinations.ai"
 
-                if response.status_code != 200:
-                    return False, None, None, f"Pollinations API error: {response.status_code}"
+            # Fetch image from Pollinations using streaming to handle chunked responses
+            timeout = httpx.Timeout(connect=30.0, read=300.0, write=30.0, pool=30.0)
+            async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
+                async with client.stream("GET", url) as response:
+                    if response.status_code == 401:
+                        return False, None, None, "Invalid or expired API key. Check your POLLINATIONS_TOKEN."
+                    if response.status_code == 402:
+                        return False, None, None, f"Insufficient credits for model '{model}'. Try 'flux' or 'zimage'."
+                    if response.status_code != 200:
+                        return False, None, None, f"Pollinations API error: {response.status_code}"
 
-                # Return the direct URL (Pollinations returns the image directly)
-                # We can either return the URL or convert to base64
-                # Returning URL is more efficient
-                return True, url, seed, None
+                    # Read the full response to ensure generation is complete
+                    await response.aread()
+
+                # Return URL without the API key
+                public_url = url.split("&key=")[0]
+                return True, public_url, seed, None
 
         except httpx.TimeoutException:
             return False, None, None, "Image generation timed out"
@@ -148,7 +161,7 @@ class PerchanceService:
         style: str = "realistic",
         resolution: str = "512x768",
         negative_prompt: Optional[str] = None,
-        model: str = "sana",
+        model: str = "flux",
         safe: bool = False,
         enhance: bool = True
     ) -> Tuple[bool, Optional[str], Optional[int], Optional[str]]:
@@ -175,6 +188,7 @@ class PerchanceService:
             seed = random.randint(1, 2147483647)
 
             encoded_prompt = quote(full_prompt)
+
             url = (
                 f"{cls.BASE_URL}/{encoded_prompt}"
                 f"?width={width}"
@@ -189,8 +203,14 @@ class PerchanceService:
             if enhance:
                 url += "&enhance=true"
 
+            if POLLINATIONS_TOKEN:
+                url += f"&key={POLLINATIONS_TOKEN}"
+            else:
+                return False, None, None, "POLLINATIONS_TOKEN is not configured. Get a free API key at https://enter.pollinations.ai"
+
             # Fetch and convert to base64
-            async with httpx.AsyncClient(timeout=120.0) as client:
+            timeout = httpx.Timeout(connect=30.0, read=180.0, write=30.0, pool=30.0)
+            async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
                 response = await client.get(url)
 
                 if response.status_code != 200:
@@ -247,13 +267,11 @@ class PerchanceService:
             seed = random.randint(1, 2147483647)
 
             # Build Pollinations URL with kontext model for img2img
-            # Using new gen.pollinations.ai endpoint for premium models
             encoded_prompt = quote(full_prompt)
             encoded_image_url = quote(image_url, safe='')
 
-            # Use new API endpoint with 'key' parameter
             url = (
-                f"{cls.GEN_URL}/{encoded_prompt}"
+                f"{cls.BASE_URL}/{encoded_prompt}"
                 f"?width={width}"
                 f"&height={height}"
                 f"&seed={seed}"
@@ -262,15 +280,17 @@ class PerchanceService:
                 f"&nologo=true"
             )
 
-            # Add API key for kontext model (requires authentication)
             if POLLINATIONS_TOKEN:
                 url += f"&key={POLLINATIONS_TOKEN}"
+            else:
+                return False, None, None, "POLLINATIONS_TOKEN is not configured. Get a free API key at https://enter.pollinations.ai"
 
             if safe:
                 url += "&safe=true"
 
             # Fetch image from Pollinations
-            async with httpx.AsyncClient(timeout=180.0) as client:
+            timeout = httpx.Timeout(connect=30.0, read=180.0, write=30.0, pool=30.0)
+            async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
                 response = await client.get(url)
 
                 if response.status_code == 429:
