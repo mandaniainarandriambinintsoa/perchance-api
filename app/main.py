@@ -11,21 +11,51 @@ from app.routes import generate_router, styles_router
 from app.services.queue_service import queue_service
 import logging
 import httpx
+import asyncio
+import os
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Keep-alive task reference
+_keep_alive_task = None
+
+
+async def keep_alive():
+    """Self-ping every 10 minutes to prevent Render from sleeping"""
+    render_url = os.getenv("RENDER_EXTERNAL_URL")
+    if not render_url:
+        logger.info("RENDER_EXTERNAL_URL not set, keep-alive disabled (local dev)")
+        return
+
+    health_url = f"{render_url}/health"
+    logger.info(f"Keep-alive started: pinging {health_url} every 10 min")
+
+    while True:
+        await asyncio.sleep(600)  # 10 minutes
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(health_url)
+                logger.info(f"Keep-alive ping: {response.status_code}")
+        except Exception as e:
+            logger.warning(f"Keep-alive ping failed: {e}")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown events"""
+    global _keep_alive_task
     # Startup: Start queue workers
     logger.info("Starting queue workers...")
     await queue_service.start_workers()
     logger.info("Queue workers started (max concurrent: 3)")
+    # Start keep-alive
+    _keep_alive_task = asyncio.create_task(keep_alive())
     yield
-    # Shutdown: cleanup if needed
+    # Shutdown: cleanup
     logger.info("Shutting down...")
+    if _keep_alive_task:
+        _keep_alive_task.cancel()
 
 
 # Create FastAPI app
@@ -88,7 +118,7 @@ async def health_check():
     # Check Pollinations.ai connectivity
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
-            response = await client.head("https://image.pollinations.ai/prompt/test")
+            response = await client.head("https://gen.pollinations.ai/image/models")
             health_status["services"]["pollinations"] = "ok" if response.status_code < 500 else "degraded"
     except Exception as e:
         logger.warning(f"Pollinations health check failed: {e}")
