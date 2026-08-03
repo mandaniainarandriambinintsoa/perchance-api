@@ -8,7 +8,7 @@ class GenerateRequest(BaseModel):
     style: Optional[str] = Field(default="realistic", description="Art style (realistic, photorealistic, cinematic, portrait, anime, fantasy, sci-fi, 3d-render)")
     resolution: Optional[str] = Field(default="512x768", description="Image resolution (e.g., 512x768)")
     negative_prompt: Optional[str] = Field(default=None, max_length=50000, description="What to avoid in generation")
-    model: Optional[str] = Field(default="seedream-pro", description="Pollinations model (seedream-pro, seedream, klein, zimage, flux)")
+    model: Optional[str] = Field(default="klein", description="Pollinations model (klein, zimage, flux)")
     enhance: Optional[bool] = Field(default=True, description="Enable AI prompt enhancement")
 
     model_config = {
@@ -18,7 +18,7 @@ class GenerateRequest(BaseModel):
                     "prompt": "a beautiful woman with blue eyes, professional portrait",
                     "style": "photorealistic",
                     "resolution": "512x768",
-                    "model": "seedream-pro",
+                    "model": "klein",
                     "negative_prompt": "blurry, bad quality, distorted"
                 }
             ]

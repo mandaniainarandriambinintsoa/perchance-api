@@ -10,7 +10,7 @@ class PerchanceService:
 
     # Unified API endpoint (requires API key since Feb 2026)
     BASE_URL = "https://gen.pollinations.ai/image"
-    DEFAULT_MODEL = "seedream-pro"
+    DEFAULT_MODEL = "klein"
 
     AVAILABLE_STYLES = [
         "realistic",
@@ -23,12 +23,10 @@ class PerchanceService:
         "3d-render"
     ]
 
-    # Curated Pollinations models. Seedream 4.5 Pro is the quality-first
-    # default for Artigen's photorealistic scenes and portraits.
+    # Curated Pollinations models that work without premium Pollen credits.
+    # FLUX.2 Klein is the quality-first default for Artigen.
     AVAILABLE_MODELS = {
-        "seedream-pro": "Seedream 4.5 Pro - Best photorealism for lifelike scenes and portraits (recommended, premium)",
-        "seedream": "Seedream 4.0 - Photorealistic images with strong prompt adherence (premium)",
-        "klein": "FLUX.2 Klein 4B - Fast generation and editing up to 2.4 MP",
+        "klein": "FLUX.2 Klein 4B - Best available quality without premium credits (recommended)",
         "zimage": "Z-Image Turbo - Fast, budget-friendly generation with crisp upscaling",
         "flux": "Flux Schnell - Fast generation at low cost",
     }
@@ -86,7 +84,7 @@ class PerchanceService:
             style: Art style to apply (realistic, photorealistic, cinematic, etc.)
             resolution: Image resolution (e.g., "512x768")
             negative_prompt: Things to avoid in the image
-            model: Pollinations model (seedream-pro, seedream, klein, zimage, flux)
+            model: Pollinations model (klein, zimage, flux)
             safe: Enable NSFW filter (default: False)
             enhance: Enable AI prompt enhancement (default: True)
 

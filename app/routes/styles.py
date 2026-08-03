@@ -20,9 +20,9 @@ async def get_models() -> ModelsResponse:
     """
     Get list of available AI models from Pollinations.ai.
 
-    - **seedream-pro**: Best photorealism for scenes and portraits (recommended)
-    - **seedream**: Strong prompt adherence and photorealism
-    - **klein**, **zimage**, **flux**: Faster and cheaper alternatives
+    - **klein**: Best available quality without premium credits (recommended)
+    - **zimage**: Fast generation with crisp upscaling
+    - **flux**: Fast generation at low cost
     """
     models = PerchanceService.get_models()
     return ModelsResponse(models=models)

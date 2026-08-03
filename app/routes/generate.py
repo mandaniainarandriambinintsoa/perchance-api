@@ -17,7 +17,7 @@ async def generate_image(body: GenerateRequest) -> GenerateResponse:
     - **prompt**: Description of the image to generate
     - **style**: Art style (realistic, photorealistic, cinematic, portrait, anime, fantasy, sci-fi, 3d-render)
     - **resolution**: Image dimensions (e.g., 512x768)
-    - **model**: Pollinations model (seedream-pro, seedream, klein, zimage, flux)
+    - **model**: Pollinations model (klein, zimage, flux)
     - **negative_prompt**: What to avoid in the generation
     - **enhance**: Enable AI prompt enhancement (default: True)
     """
