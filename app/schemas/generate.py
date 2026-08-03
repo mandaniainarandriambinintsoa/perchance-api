@@ -9,7 +9,7 @@ class GenerateRequest(BaseModel):
     resolution: Optional[str] = Field(default="512x768", description="Image resolution (e.g., 512x768)")
     negative_prompt: Optional[str] = Field(default=None, max_length=50000, description="What to avoid in generation")
     model: Optional[str] = Field(default="klein", description="Pollinations model (klein, zimage, flux)")
-    enhance: Optional[bool] = Field(default=True, description="Enable AI prompt enhancement")
+    enhance: Optional[bool] = Field(default=False, description="Enable Pollinations prompt rewriting")
 
     model_config = {
         "json_schema_extra": {

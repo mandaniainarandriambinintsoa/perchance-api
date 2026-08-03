@@ -19,7 +19,7 @@ async def generate_image(body: GenerateRequest) -> GenerateResponse:
     - **resolution**: Image dimensions (e.g., 512x768)
     - **model**: Pollinations model (klein, zimage, flux)
     - **negative_prompt**: What to avoid in the generation
-    - **enhance**: Enable AI prompt enhancement (default: True)
+    - **enhance**: Enable Pollinations prompt rewriting (default: False)
     """
     # Validate style
     available_styles = PerchanceService.get_styles()
@@ -45,7 +45,7 @@ async def generate_image(body: GenerateRequest) -> GenerateResponse:
         resolution=body.resolution or "512x768",
         negative_prompt=body.negative_prompt,
         model=model,
-        enhance=body.enhance if body.enhance is not None else True
+        enhance=body.enhance if body.enhance is not None else False
     )
 
     if not success:
@@ -141,7 +141,7 @@ async def queue_generate_image(body: GenerateRequest):
         "resolution": body.resolution or "512x768",
         "negative_prompt": body.negative_prompt,
         "model": model,
-        "enhance": body.enhance if body.enhance is not None else True
+        "enhance": body.enhance if body.enhance is not None else False
     })
 
     return {

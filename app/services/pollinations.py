@@ -31,11 +31,12 @@ class PerchanceService:
         "flux": "Flux Schnell - Fast generation at low cost",
     }
 
-    # Prompts de style optimisés pour le réalisme maximum
+    # Generic styles must describe rendering only. Human-specific details belong
+    # exclusively to the portrait style, otherwise unrelated prompts gain faces.
     STYLE_PROMPTS = {
-        "realistic": "ultra realistic photograph, real person, real human, natural skin texture, pores visible, authentic human features, professional DSLR photo, Canon EOS R5, 85mm f/1.4 lens, natural lighting, unedited raw photo, no AI artifacts, genuine photograph",
-        "photorealistic": "real photograph, not AI generated, actual photo, genuine human, natural imperfections, authentic skin texture, RAW unprocessed photo, professional photography, Hasselblad camera, medium format, true to life, documentary style",
-        "cinematic": "cinematic film still, real movie scene, 35mm film, Arri Alexa camera, anamorphic lens, natural film grain, Hollywood production quality, real actors, authentic cinematography, color graded",
+        "realistic": "ultra-realistic photograph, physically accurate materials, natural lighting, professional DSLR photography, sharp details, true-to-life colors, realistic scale and perspective, no AI artifacts",
+        "photorealistic": "photorealistic image, authentic textures and materials, natural imperfections, realistic lighting and shadows, RAW photography, true-to-life colors, documentary detail",
+        "cinematic": "cinematic film still, 35mm film, Arri Alexa camera, anamorphic lens, natural film grain, dramatic lighting, authentic cinematography, professional color grading",
         "portrait": "real portrait photograph, actual person, genuine human face, natural skin with pores and texture, studio photography, Profoto lighting, 85mm portrait lens, shallow depth of field, magazine quality, unretouched natural beauty",
         "anime": "anime style, japanese animation, vibrant colors, detailed linework, studio ghibli quality",
         "fantasy": "fantasy art, magical atmosphere, ethereal lighting, highly detailed digital painting, concept art quality",
@@ -74,7 +75,7 @@ class PerchanceService:
         negative_prompt: Optional[str] = None,
         model: str = DEFAULT_MODEL,
         safe: bool = False,
-        enhance: bool = True
+        enhance: bool = False
     ) -> Tuple[bool, Optional[str], Optional[int], Optional[str]]:
         """
         Generate an image using Pollinations.ai
@@ -86,7 +87,7 @@ class PerchanceService:
             negative_prompt: Things to avoid in the image
             model: Pollinations model (klein, zimage, flux)
             safe: Enable NSFW filter (default: False)
-            enhance: Enable AI prompt enhancement (default: True)
+            enhance: Enable Pollinations prompt rewriting (default: False)
 
         Returns:
             Tuple of (success, image_url, seed, error_message)
@@ -162,7 +163,7 @@ class PerchanceService:
         negative_prompt: Optional[str] = None,
         model: str = DEFAULT_MODEL,
         safe: bool = False,
-        enhance: bool = True
+        enhance: bool = False
     ) -> Tuple[bool, Optional[str], Optional[int], Optional[str]]:
         """
         Generate an image and return as base64 data URI
