@@ -10,6 +10,7 @@ class PerchanceService:
 
     # Unified API endpoint (requires API key since Feb 2026)
     BASE_URL = "https://gen.pollinations.ai/image"
+    DEFAULT_MODEL = "seedream-pro"
 
     AVAILABLE_STYLES = [
         "realistic",
@@ -22,14 +23,14 @@ class PerchanceService:
         "3d-render"
     ]
 
-    # Modèles Pollinations disponibles (mis à jour février 2026)
+    # Curated Pollinations models. Seedream 4.5 Pro is the quality-first
+    # default for Artigen's photorealistic scenes and portraits.
     AVAILABLE_MODELS = {
-        "flux": "Flux Schnell - Fast high-quality generation (recommended)",
-        "zimage": "Z-Image Turbo - Fast 6B Flux with 2x upscaling",
-        # Premium models (require higher tier / more pollen credits):
-        # "seedream": "Seedream 4.0 - ByteDance ARK (better quality)",
-        # "gptimage": "GPT Image 1 Mini - OpenAI image generation",
-        # "imagen-4": "Imagen 4 - Google's latest image gen",
+        "seedream-pro": "Seedream 4.5 Pro - Best photorealism for lifelike scenes and portraits (recommended, premium)",
+        "seedream": "Seedream 4.0 - Photorealistic images with strong prompt adherence (premium)",
+        "klein": "FLUX.2 Klein 4B - Fast generation and editing up to 2.4 MP",
+        "zimage": "Z-Image Turbo - Fast, budget-friendly generation with crisp upscaling",
+        "flux": "Flux Schnell - Fast generation at low cost",
     }
 
     # Prompts de style optimisés pour le réalisme maximum
@@ -73,7 +74,7 @@ class PerchanceService:
         style: str = "realistic",
         resolution: str = "512x768",
         negative_prompt: Optional[str] = None,
-        model: str = "flux",
+        model: str = DEFAULT_MODEL,
         safe: bool = False,
         enhance: bool = True
     ) -> Tuple[bool, Optional[str], Optional[int], Optional[str]]:
@@ -85,7 +86,7 @@ class PerchanceService:
             style: Art style to apply (realistic, photorealistic, cinematic, etc.)
             resolution: Image resolution (e.g., "512x768")
             negative_prompt: Things to avoid in the image
-            model: Pollinations model (flux, seedream, zimage, gptimage, imagen-4)
+            model: Pollinations model (seedream-pro, seedream, klein, zimage, flux)
             safe: Enable NSFW filter (default: False)
             enhance: Enable AI prompt enhancement (default: True)
 
@@ -138,7 +139,7 @@ class PerchanceService:
                     if response.status_code == 401:
                         return False, None, None, "Invalid or expired API key. Check your POLLINATIONS_TOKEN."
                     if response.status_code == 402:
-                        return False, None, None, f"Insufficient credits for model '{model}'. Try 'flux' or 'zimage'."
+                        return False, None, None, f"Insufficient credits for model '{model}'. Try 'klein', 'zimage', or 'flux'."
                     if response.status_code != 200:
                         return False, None, None, f"Pollinations API error: {response.status_code}"
 
@@ -161,7 +162,7 @@ class PerchanceService:
         style: str = "realistic",
         resolution: str = "512x768",
         negative_prompt: Optional[str] = None,
-        model: str = "flux",
+        model: str = DEFAULT_MODEL,
         safe: bool = False,
         enhance: bool = True
     ) -> Tuple[bool, Optional[str], Optional[int], Optional[str]]:

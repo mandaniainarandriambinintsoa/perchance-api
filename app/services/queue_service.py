@@ -79,7 +79,7 @@ class QueueService:
                                 "success": True,
                                 "image_url": image_url,
                                 "seed": seed,
-                                "model": params.get("model", "sana")
+                                "model": params.get("model", PerchanceService.DEFAULT_MODEL)
                             }
                         else:
                             job.status = JobStatus.FAILED

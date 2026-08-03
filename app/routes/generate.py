@@ -17,7 +17,7 @@ async def generate_image(body: GenerateRequest) -> GenerateResponse:
     - **prompt**: Description of the image to generate
     - **style**: Art style (realistic, photorealistic, cinematic, portrait, anime, fantasy, sci-fi, 3d-render)
     - **resolution**: Image dimensions (e.g., 512x768)
-    - **model**: AI model (sana, zimage, turbo)
+    - **model**: Pollinations model (seedream-pro, seedream, klein, zimage, flux)
     - **negative_prompt**: What to avoid in the generation
     - **enhance**: Enable AI prompt enhancement (default: True)
     """
@@ -31,7 +31,7 @@ async def generate_image(body: GenerateRequest) -> GenerateResponse:
 
     # Validate model
     available_models = PerchanceService.get_models()
-    model = body.model or "flux"
+    model = body.model or PerchanceService.DEFAULT_MODEL
     if model not in available_models:
         raise HTTPException(
             status_code=400,
@@ -126,7 +126,7 @@ async def queue_generate_image(body: GenerateRequest):
 
     # Validate model
     available_models = PerchanceService.get_models()
-    model = body.model or "flux"
+    model = body.model or PerchanceService.DEFAULT_MODEL
     if model not in available_models:
         raise HTTPException(
             status_code=400,
